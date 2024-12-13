@@ -3,14 +3,33 @@
 # Enable command printing
 set -x
 
-# Remote server IP address
+# Default values
 SERVER_IP="server.work"
-# Remote server username
 SERVER_USER="tony"
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--host)
+            SERVER_IP="$2"
+            shift 2
+            ;;
+        -u|--user)
+            SERVER_USER="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown parameter: $1"
+            echo "Usage: $0 [-h|--host SERVER_IP] [-u|--user SERVER_USER]"
+            exit 1
+            ;;
+    esac
+done
+
 # Remote folder path
-REMOTE_PATH="/home/tony/share"
+REMOTE_PATH="/home/$SERVER_USER/share"
 # Local mount point
-MOUNT_POINT="$HOME/server.work/share"
+MOUNT_POINT="$HOME/share/$SERVER_IP"
 
 # Check if running on macOS
 if [[ "$OSTYPE" == "darwin"* ]]; then
