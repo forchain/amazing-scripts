@@ -38,5 +38,19 @@ A user-level script for setting up development environment.
 Must be run as a user
 
 ```bash
-./deploy_user.sh
+# Using network ID directly
+./deploy_user.sh --network-id <zerotier_network_id>
 ```
+
+The script will automatically read from `.env` file in the current directory if it exists.
+
+Environment file example (.env):
+```bash
+ZEROTIER_NETWORK_ID=your_network_id
+```
+
+Features:
+- Installs basic tools (zsh, vim, curl, git, tmux)
+- Installs and configures Oh My Zsh
+- Configures tmux mouse support
+- Installs ZeroTier and joins specified network
