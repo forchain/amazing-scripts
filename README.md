@@ -36,14 +36,21 @@ Environment variables (.env):
 USERNAME=dev              # Default: dev
 PASSWORD=your_password    # Default: password123
 ZEROTIER_NETWORK_ID=id   # Default: empty (skip ZeroTier installation)
+
+# Proxy configuration
+PROXY_HOST=proxy.example.com    # Default: empty (skip proxy configuration)
+PROXY_PORT=1080                 # Default: 1080
+PROXY_USERNAME=proxy_user       # Default: empty
+PROXY_PASSWORD=proxy_pass       # Default: empty
 ```
 
 Features:
 - Creates new user with sudo privileges
 - Configures passwordless sudo access
-- Installs basic tools (zsh, vim, curl, git, tmux)
+- Installs basic tools (zsh, vim, curl, git, tmux, proxychains4)
 - Installs and configures Caddy web server
 - Installs ZeroTier and joins network (if network ID provided)
+- Configures proxychains with SOCKS5 proxy support
 
 ### deploy_user.sh
 

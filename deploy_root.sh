@@ -10,6 +10,10 @@ fi
 DEFAULT_USERNAME="dev"
 DEFAULT_PASSWORD="password123"
 DEFAULT_ZEROTIER_NETWORK_ID=""
+DEFAULT_PROXY_HOST=""
+DEFAULT_PROXY_PORT="1080"
+DEFAULT_PROXY_USERNAME=""
+DEFAULT_PROXY_PASSWORD=""
 
 # Source environment variables if .env exists
 if [ -f ".env" ]; then
@@ -20,6 +24,10 @@ fi
 USERNAME=${USERNAME:-$DEFAULT_USERNAME}
 PASSWORD=${PASSWORD:-$DEFAULT_PASSWORD}
 ZEROTIER_NETWORK_ID=${ZEROTIER_NETWORK_ID:-$DEFAULT_ZEROTIER_NETWORK_ID}
+PROXY_HOST=${PROXY_HOST:-$DEFAULT_PROXY_HOST}
+PROXY_PORT=${PROXY_PORT:-$DEFAULT_PROXY_PORT}
+PROXY_USERNAME=${PROXY_USERNAME:-$DEFAULT_PROXY_USERNAME}
+PROXY_PASSWORD=${PROXY_PASSWORD:-$DEFAULT_PROXY_PASSWORD}
 
 # Function to check if a package is installed
 is_installed() {
@@ -31,7 +39,7 @@ is_installed() {
 NEED_APT_UPDATE=false
 
 # Check and install basic tools
-BASIC_TOOLS="zsh vim curl git tmux"
+BASIC_TOOLS="zsh vim curl git tmux proxychains4"
 TOOLS_TO_INSTALL=""
 for tool in $BASIC_TOOLS; do
     if ! is_installed $tool; then
@@ -124,6 +132,68 @@ else
     echo "- Home directory: /home/$USERNAME"
     echo "- Added to sudo group"
     echo "- Sudo access configured without password"
+fi
+
+# Configure proxychains if proxy settings are provided
+if [ ! -z "$PROXY_HOST" ]; then
+    echo "Configuring proxychains..."
+    
+    # Create proxychains configuration
+    cat > /etc/proxychains4.conf << EOF
+# proxychains.conf  VER 4.x
+#
+#        HTTP, SOCKS4a, SOCKS5 tunneling proxifier with DNS.
+
+# The option below identifies how the ProxyList is treated.
+# only one option should be uncommented at time,
+# otherwise the last appearing option will be accepted
+
+dynamic_chain
+#strict_chain
+#random_chain
+
+# Quiet mode (no output from library)
+quiet_mode
+
+# Proxy DNS requests - no leak for DNS data
+proxy_dns
+
+# Some timeouts in milliseconds
+tcp_read_time_out 15000
+tcp_connect_time_out 8000
+
+# ProxyList format
+#       type  host  port [user pass]
+#       (values separated by 'tab' or 'blank')
+#
+[ProxyList]
+EOF
+
+    # Add proxy configuration with authentication if provided
+    if [ ! -z "$PROXY_USERNAME" ] && [ ! -z "$PROXY_PASSWORD" ]; then
+        echo "socks5 $PROXY_HOST $PROXY_PORT $PROXY_USERNAME $PROXY_PASSWORD" >> /etc/proxychains4.conf
+    else
+        echo "socks5 $PROXY_HOST $PROXY_PORT" >> /etc/proxychains4.conf
+    fi
+
+    # Set permissions
+    chmod 644 /etc/proxychains4.conf
+
+    # Create a test script in user's home directory
+    cat > "/home/$USERNAME/test-proxy.sh" << EOF
+#!/bin/bash
+echo "Testing proxy connection..."
+proxychains4 curl -s https://api.ipify.org?format=json
+EOF
+
+    # Set ownership and permissions
+    chown "$USERNAME:$USERNAME" "/home/$USERNAME/test-proxy.sh"
+    chmod +x "/home/$USERNAME/test-proxy.sh"
+
+    echo "Proxychains configuration completed:"
+    echo "- Configuration file: /etc/proxychains4.conf"
+    echo "- Test script created: ~/test-proxy.sh"
+    echo "- Usage example: proxychains4 curl https://example.com"
 fi
 
 echo "System setup completed:"

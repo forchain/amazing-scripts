@@ -74,5 +74,3 @@ if systemctl reload caddy; then
     echo "Proxying to: $TARGET"
 else
     echo "Error: Failed to reload Caddy"
-    exit 1
-fi
