@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Install required packages
-sudo apt update
-sudo apt install -y zsh vim curl git tmux
-
 # Install Oh My Zsh
 echo "Installing Oh My Zsh..."
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
@@ -18,5 +14,5 @@ chsh -s $(which zsh)
 echo "# Enable mouse support" > ~/.tmux.conf
 echo "set -g mouse on" >> ~/.tmux.conf
 
-echo "Installation completed!"
-echo "Please log out and log back in for the changes to take effect."
+echo "User environment setup completed!"
+echo "Please log out and log back in for the shell changes to take effect."
