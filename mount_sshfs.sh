@@ -6,6 +6,7 @@ set -x
 # Default values
 SERVER_IP="server.work"
 SERVER_USER="tony"
+SERVER_PORT="22"  # Add default port
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -18,9 +19,13 @@ while [[ $# -gt 0 ]]; do
             SERVER_USER="$2"
             shift 2
             ;;
+        -p|--port)
+            SERVER_PORT="$2"
+            shift 2
+            ;;
         *)
             echo "Unknown parameter: $1"
-            echo "Usage: $0 [-h|--host SERVER_IP] [-u|--user SERVER_USER]"
+            echo "Usage: $0 [-h|--host SERVER_IP] [-u|--user SERVER_USER] [-p|--port SERVER_PORT]"
             exit 1
             ;;
     esac
@@ -52,9 +57,9 @@ fi
 
 # Check SSH connection and create remote directory if it doesn't exist
 echo "Checking remote directory..."
-if ! ssh "$SERVER_USER@$SERVER_IP" "[ -d \"$REMOTE_PATH\" ]"; then
+if ! ssh -p "$SERVER_PORT" "$SERVER_USER@$SERVER_IP" "[ -d \"$REMOTE_PATH\" ]"; then
     echo "Remote directory does not exist. Creating it..."
-    if ssh "$SERVER_USER@$SERVER_IP" "mkdir -p \"$REMOTE_PATH\""; then
+    if ssh -p "$SERVER_PORT" "$SERVER_USER@$SERVER_IP" "mkdir -p \"$REMOTE_PATH\""; then
         echo "Remote directory created successfully."
     else
         echo "Failed to create remote directory. Please check your permissions."
@@ -74,11 +79,11 @@ else
     
     if [[ "$OSTYPE" == "darwin"* ]]; then
         # macOS specific options
-        sshfs -o allow_other,defer_permissions,volname=ServerShare \
+        sshfs -o allow_other,defer_permissions,volname=ServerShare,port="$SERVER_PORT" \
             "$SERVER_USER@$SERVER_IP:$REMOTE_PATH" "$MOUNT_POINT"
     else
         # Linux options
-        sshfs -o allow_other,defer_permissions \
+        sshfs -o allow_other,defer_permissions,port="$SERVER_PORT" \
             "$SERVER_USER@$SERVER_IP:$REMOTE_PATH" "$MOUNT_POINT"
     fi
 
@@ -99,10 +104,10 @@ else
         # Show basic debug information
         echo -e "\nDebug information:"
         echo "1. Testing SSH connection:"
-        ssh "$SERVER_USER@$SERVER_IP" "echo 'SSH connection test successful'"
+        ssh -p "$SERVER_PORT" "$SERVER_USER@$SERVER_IP" "echo 'SSH connection test successful'"
         
         echo -e "\n2. Checking remote directory:"
-        ssh "$SERVER_USER@$SERVER_IP" "ls -la \"$REMOTE_PATH\""
+        ssh -p "$SERVER_PORT" "$SERVER_USER@$SERVER_IP" "ls -la \"$REMOTE_PATH\""
         
         echo -e "\n3. Checking local mount point:"
         ls -la "$MOUNT_POINT"
