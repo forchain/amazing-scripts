@@ -67,16 +67,8 @@ if ! ssh -p "$SERVER_PORT" "$SERVER_USER@$SERVER_IP" "[ -d \"$REMOTE_PATH\" ]"; 
     fi
 fi
 
-# Create local mount point
-mkdir -p "$MOUNT_POINT"
-
-# Check if mount point is already mounted
-if mount | grep -q "$MOUNT_POINT"; then
-    echo "$MOUNT_POINT is already mounted."
-else
-    # Mount remote folder
-    echo "Mounting $REMOTE_PATH from $SERVER_IP to $MOUNT_POINT"
-    
+# Function to attempt mount
+mount_remote() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
         # macOS specific options
         sshfs -o allow_other,defer_permissions,volname=ServerShare,port="$SERVER_PORT" \
@@ -86,15 +78,24 @@ else
         sshfs -o allow_other,defer_permissions,port="$SERVER_PORT" \
             "$SERVER_USER@$SERVER_IP:$REMOTE_PATH" "$MOUNT_POINT"
     fi
+}
 
-    # Show mount status
-    echo "Current mounts:"
-    mount | grep "$MOUNT_POINT" || echo "Mount point not found in mount list"
-    
-    # Check if mount was successful
-    if mount | grep -q "$MOUNT_POINT"; then
-        echo "Successfully mounted $REMOTE_PATH from $SERVER_IP to $MOUNT_POINT"
-    else
+# Create local mount point
+mkdir -p "$MOUNT_POINT"
+
+# First mount attempt
+echo "Mounting $REMOTE_PATH from $SERVER_IP to $MOUNT_POINT"
+mount_remote
+
+# Check if mount was successful
+if ! mount | grep -i "$MOUNT_POINT"; then
+    echo "First mount attempt failed. Forcing unmount and trying again..."
+    umount -f "$MOUNT_POINT" 2>/dev/null
+    sleep 1
+    mount_remote
+
+    # Check second mount attempt
+    if ! mount | grep -i "$MOUNT_POINT"; then
         echo "Failed to mount $REMOTE_PATH from $SERVER_IP to $MOUNT_POINT"
         echo "Please ensure:"
         echo "1. macFUSE is up to date (for macOS)"
@@ -111,5 +112,13 @@ else
         
         echo -e "\n3. Checking local mount point:"
         ls -la "$MOUNT_POINT"
+    else
+        echo "Successfully mounted $REMOTE_PATH from $SERVER_IP to $MOUNT_POINT"
     fi
+else
+    echo "Successfully mounted $REMOTE_PATH from $SERVER_IP to $MOUNT_POINT"
 fi
+
+# Show current mounts
+echo "Current mounts:"
+mount | grep -i "$MOUNT_POINT" || echo "Mount point not found in mount list"
